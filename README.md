@@ -1,24 +1,106 @@
-# Laravel Model Generator
-###Generates Laravel 8 models from existing MySQL database schema.
+# Laravel Schema Generator
 
-Use composer to create the stub with
-```
-php artisan make:command GenerateModelFromMySQL
-```
+Generate Laravel models, migrations, and form requests from existing MySQL database schema.
 
-Copy GenerateModelFromMySQL.php to app/Console/Commands/
+## Installation
 
-Update app/Console/Kernel.php and add to the $commands[] array:
-```
-\App\Console\Commands\GenerateModelFromMySQL::class,
+```bash
+composer require ibuildwebapps/laravel-schema-generator --dev
 ```
 
-Set up your MySQL connection within Laravel, then use the generator as follows:
-```
-php artisan generate:model <database>.<table>
+The package auto-registers via Laravel's package discovery.
+
+## Usage
+
+### Generate Models
+
+```bash
+# Single table
+php artisan schema:model users
+
+# Wildcard pattern
+php artisan schema:model user*
+
+# All tables
+php artisan schema:model '*'
+
+# Specify database
+php artisan schema:model users --database=mydb
+
+# Overwrite existing
+php artisan schema:model users --force
 ```
 
-Table param accepts the * wildcard.
+### Generate Migrations
 
-After the models are generated, uncomment the required $fillable fields.
-Timestamps field is included, but probably not required when the model is generated in the MySQL->Laravel direction.
+```bash
+php artisan schema:migration users
+php artisan schema:migration '*' --force
+```
+
+### Generate Form Requests
+
+```bash
+php artisan schema:request users
+php artisan schema:request '*' --force
+```
+
+### Generate All (Models + Migrations + Requests)
+
+```bash
+php artisan schema:all users
+php artisan schema:all '*' --database=mydb --force
+```
+
+## Configuration
+
+Publish the config file:
+
+```bash
+php artisan vendor:publish --tag=schema-generator-config
+```
+
+Config options in `config/schema-generator.php`:
+
+```php
+return [
+    'model_namespace' => 'App\\Models',
+    'model_path' => app_path('Models'),
+    'request_namespace' => 'App\\Http\\Requests',
+    'request_path' => app_path('Http/Requests'),
+];
+```
+
+## Features
+
+- **Models**: Generates Eloquent models with:
+  - `$fillable` array with column types as comments
+  - `$timestamps` based on `created_at` column presence
+  - `SoftDeletes` trait if `deleted_at` column exists
+  - `belongsTo()` relationships from foreign keys
+  - `hasMany()` relationships from referencing tables
+
+- **Migrations**: Generates migrations with:
+  - All column types mapped to Laravel schema builder methods
+  - Nullable, unique, and default modifiers
+  - Foreign key constraints
+  - Modern anonymous class syntax
+
+- **Requests**: Generates Form Request classes with:
+  - `required`/`nullable` based on column nullability
+  - Type-based rules (`integer`, `numeric`, `date`, `boolean`, `json`)
+  - `email` rule for email fields
+  - `max` rule for string columns
+  - `exists` rule for foreign key columns
+
+## Testing
+
+```bash
+composer test
+# or
+vendor/bin/pest
+```
+
+## License
+
+MIT
